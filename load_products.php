@@ -1,21 +1,14 @@
 <?php
-// session_start(); // જો સેશનની જરૂર હોય તો જ રાખો
+// Vercel માટે સેસન પાથ (જો જરૂર હોય તો)
+session_save_path('/tmp');
+session_start(); 
 include('database/connection.php');
 
 /**
- * ડેટાબેઝ ક્વેરીના પરિણામને કેશ કરવા માટેનું મજબૂત અને સુધારેલું ફંક્શન.
+ * કેશિંગ લોજિક વગરનું ડાયરેક્ટ ડેટાબેઝ ક્વેરી ફંક્શન
  */
 function get_cached_query_result($conn, $sql, $cache_file, $cache_time_seconds, $types = null, $params = []) {
-    // પગલું 1: જો માન્ય કેશ ફાઈલ હાજર હોય તો તેનો ઉપયોગ કરો
-    if (file_exists($cache_file) && filesize($cache_file) > 0 && (time() - filemtime($cache_file)) < $cache_time_seconds) {
-        $content = file_get_contents($cache_file);
-        $data = @unserialize($content);
-        if ($data !== false) {
-            return $data;
-        }
-    }
-
-    // પગલું 2: જો કેશ ન હોય તો ડેટાબેઝમાંથી નવો ડેટા મેળવો
+    // Vercel પર ફાઈલ લખવાનું બંધ કર્યું છે, સીધું ડેટાબેઝમાંથી ડેટા લેશે
     if (!$conn) return [];
 
     $stmt = $conn->prepare($sql);
@@ -30,29 +23,21 @@ function get_cached_query_result($conn, $sql, $cache_file, $cache_time_seconds, 
     $data = $result->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
 
-    // પગલું 3: ફક્ત ત્યારે જ કેશ કરો જો ડેટા મળ્યો હોય
-    if (!empty($data)) {
-        if (!is_dir('cache')) {
-            @mkdir('cache', 0755, true);
-        }
-        @file_put_contents($cache_file, serialize($data));
-    }
     return $data;
 }
 
-// વેબસાઇટ URL મેળવો (આ પેજ પર પણ જરૂરી છે)
+// વેબસાઇટ URL મેળવો (કેશ વગર)
 $pwebsite = '';
 if ($conn) {
     $site_sql = "SELECT site FROM credentials LIMIT 1";
-    $cache_file_site = 'cache/site_url.cache';
-    $site_data = get_cached_query_result($conn, $site_sql, $cache_file_site, 86400); // 1 day cache
-    // ==> [સુધારો અહીં છે] <==
+    // ફંક્શનના આર્ગ્યુમેન્ટ્સ એવા જ રાખ્યા છે જેથી કોડમાં બીજે ક્યાંય ફેરફાર ન કરવો પડે
+    $site_data = get_cached_query_result($conn, $site_sql, '', 0); 
     if (!empty($site_data) && isset($site_data[0]['site'])) {
         $pwebsite = rtrim($site_data[0]['site'], '/');
     }
 }
 
-// સ્ટાર રેટિંગ જનરેટ કરવા માટેનું ફંક્શન (આ પેજ પર પણ જરૂરી છે)
+// સ્ટાર રેટિંગ જનરેટ કરવા માટેનું ફંક્શન
 function generate_star_rating($rating) {
     $rating = (float)$rating;
     $stars_html = '';
@@ -66,22 +51,17 @@ function generate_star_rating($rating) {
     return $stars_html;
 }
 
-// પેજીનેશન માટે વેરિયેબલ્સ સેટ કરો
+// પેજીનેશન સેટઅપ
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-if ($page < 1) {
-    $page = 1;
-}
+if ($page < 1) $page = 1;
+
 $limit = 10;
 $offset = ($page - 1) * $limit;
 
 // પ્રોડક્ટ્સ મેળવો અને HTML જનરેટ કરો
 if ($conn) {
-    $cache_file_page = "cache/products_page_{$page}.cache";
     $products_sql = "SELECT * FROM products LIMIT ? OFFSET ?";
-    
-    // ==> [સુધારો અહીં છે] <==
-    // અહીં $types અને $params યોગ્ય રીતે પાસ કરેલા છે.
-    $products_array = get_cached_query_result($conn, $products_sql, $cache_file_page, 300, "ii", [$limit, $offset]);
+    $products_array = get_cached_query_result($conn, $products_sql, '', 0, "ii", [$limit, $offset]);
 
     if (!empty($products_array)) {
         foreach ($products_array as $fetch_product) {
@@ -114,9 +94,6 @@ if ($conn) {
             </a>
 <?php
         }
-    } else {
-        // જો આ પેજ પર કોઈ પ્રોડક્ટ ન મળે, તો કોઈ આઉટપુટ ન આપો.
-        // આનાથી JavaScript ને ખબર પડશે કે બધા પ્રોડક્ટ્સ લોડ થઈ ગયા છે.
     }
 }
 ?>
