@@ -4,8 +4,11 @@ include('database/connection.php');
 
 // The get_cached_query_result function is already present in your first code, reused here.
 function get_cached_query_result($conn, $sql, $types, $params, $cache_file, $cache_time_seconds) {
-    if (file_exists($cache_file) && (time() - filemtime($cache_file)) < $cache_time_seconds) {
-        return unserialize(file_get_contents($cache_file));
+    // Vercel માં ફાઈલ લખવા માટે /tmp ફોલ્ડર વાપરવું પડે
+    $vercel_cache_path = "/tmp/" . basename($cache_file);
+
+    if (file_exists($vercel_cache_path) && (time() - filemtime($vercel_cache_path)) < $cache_time_seconds) {
+        return unserialize(file_get_contents($vercel_cache_path));
     }
 
     $stmt = $conn->prepare($sql);
@@ -20,10 +23,8 @@ function get_cached_query_result($conn, $sql, $types, $params, $cache_file, $cac
     $data = $result->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
 
-    if (!is_dir('cache')) {
-        mkdir('cache', 0755, true);
-    }
-    file_put_contents($cache_file, serialize($data));
+    // Vercel માં માત્ર /tmp માં જ ફાઈલ સેવ કરી શકાય છે
+    file_put_contents($vercel_cache_path, serialize($data));
 
     return $data;
 }
