@@ -1,8 +1,7 @@
 {
   "functions": {
-    "*.php": {
-      "runtime": "vercel-php@0.7.2"
-    }
+    "index.php": { "runtime": "vercel-php@0.7.2" },
+    "*.php": { "runtime": "vercel-php@0.7.2" }
   },
   "routes": [
     { "src": "/cart", "dest": "cart.php" },
@@ -15,6 +14,6 @@
     { "src": "/verify-payment", "dest": "verify-payment.php" },
     { "src": "/verify-cashfree-payment", "dest": "verify-cashfree-payment.php" },
     { "src": "/load_products", "dest": "load_products.php" },
-    { "src": "/(.*)", "dest": "/$1" }
+    { "src": "/(.*)", "dest": "index.php" }
   ]
 }
