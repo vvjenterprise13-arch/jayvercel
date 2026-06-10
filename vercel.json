@@ -1,7 +1,8 @@
 {
   "functions": {
-    "index.php": { "runtime": "vercel-php@0.7.2" },
-    "*.php": { "runtime": "vercel-php@0.7.2" }
+    "*.php": {
+      "runtime": "vercel-php@0.7.2"
+    }
   },
   "routes": [
     { "src": "/cart", "dest": "cart.php" },
@@ -11,9 +12,6 @@
     { "src": "/singlepageview", "dest": "singlepageview.php" },
     { "src": "/category_products", "dest": "category_products.php" },
     { "src": "/thank-you", "dest": "thank-you.php" },
-    { "src": "/verify-payment", "dest": "verify-payment.php" },
-    { "src": "/verify-cashfree-payment", "dest": "verify-cashfree-payment.php" },
-    { "src": "/load_products", "dest": "load_products.php" },
     { "src": "/(.*)", "dest": "index.php" }
   ]
 }
